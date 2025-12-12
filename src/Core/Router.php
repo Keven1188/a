@@ -68,11 +68,16 @@ class Router
      */
     private function convertToRegex(string $path): string
     {
-        // Escapar caracteres especiais
-        $pattern = preg_quote($path, '/');
+        // Primeiro, substituir parâmetros {id} por placeholders temporários
+        $pattern = preg_replace_callback('/\{([^}]+)\}/', function($matches) {
+            return '___PARAM___';
+        }, $path);
         
-        // Substituir parâmetros {id} por grupos de captura
-        $pattern = preg_replace('/\\\\{([^}]+)\\\\}/', '([^/]+)', $pattern);
+        // Escapar caracteres especiais
+        $pattern = preg_quote($pattern, '/');
+        
+        // Restaurar os parâmetros como grupos de captura
+        $pattern = str_replace('___PARAM___', '([^/]+)', $pattern);
         
         return '/^' . $pattern . '$/';
     }

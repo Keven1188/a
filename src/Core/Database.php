@@ -20,6 +20,7 @@ class Database
     {
         if (self::$connection === null) {
             try {
+                // Primeiro, tentar conectar ao banco específico
                 self::$connection = new PDO(
                     DatabaseConfig::getDsn(),
                     DatabaseConfig::USERNAME,
@@ -27,7 +28,35 @@ class Database
                     DatabaseConfig::getOptions()
                 );
             } catch (PDOException $e) {
-                throw new \Exception('Erro na conexão com o banco de dados: ' . $e->getMessage());
+                // Se falhar, pode ser que o banco não exista
+                // Tentar conectar sem especificar o banco para criá-lo
+                try {
+                    $dsnWithoutDb = sprintf(
+                        'mysql:host=%s;charset=%s',
+                        DatabaseConfig::HOST,
+                        DatabaseConfig::CHARSET
+                    );
+                    $tempConnection = new PDO(
+                        $dsnWithoutDb,
+                        DatabaseConfig::USERNAME,
+                        DatabaseConfig::PASSWORD,
+                        DatabaseConfig::getOptions()
+                    );
+                    
+                    // Criar o banco de dados se não existir
+                    $dbName = DatabaseConfig::DATABASE_NAME;
+                    $tempConnection->exec("CREATE DATABASE IF NOT EXISTS `{$dbName}` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
+                    
+                    // Agora conectar ao banco específico
+                    self::$connection = new PDO(
+                        DatabaseConfig::getDsn(),
+                        DatabaseConfig::USERNAME,
+                        DatabaseConfig::PASSWORD,
+                        DatabaseConfig::getOptions()
+                    );
+                } catch (PDOException $e2) {
+                    throw new \Exception('Erro na conexão com o banco de dados: ' . $e2->getMessage());
+                }
             }
         }
         
