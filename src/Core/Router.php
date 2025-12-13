@@ -68,18 +68,35 @@ class Router
      */
     private function convertToRegex(string $path): string
     {
-        // Primeiro, substituir parâmetros {id} por placeholders temporários
-        $pattern = preg_replace_callback('/\{([^}]+)\}/', function($matches) {
-            return '___PARAM___';
-        }, $path);
+        // Normalizar o caminho (remover barras duplas e normalizar)
+        $path = trim($path, '/');
+        if (empty($path)) {
+            return '/^\/?$/';
+        }
         
-        // Escapar caracteres especiais
-        $pattern = preg_quote($pattern, '/');
+        // Dividir o caminho em partes (separadas por /)
+        $parts = explode('/', $path);
+        $patternParts = [];
         
-        // Restaurar os parâmetros como grupos de captura
-        $pattern = str_replace('___PARAM___', '([^/]+)', $pattern);
+        foreach ($parts as $part) {
+            if (empty($part)) {
+                continue;
+            }
+            
+            if (preg_match('/^\{([^}]+)\}$/', $part, $matches)) {
+                // É um parâmetro {id}
+                $patternParts[] = '([^/]+)';
+            } else {
+                // É uma parte literal - escapar caracteres especiais (mas não a barra)
+                $patternParts[] = preg_quote($part, '/');
+            }
+        }
         
-        return '/^' . $pattern . '$/';
+        // Construir o padrão com barras escapadas corretamente
+        // As barras devem ser escapadas como \/ na regex
+        $pattern = '/^\/' . implode('\/', $patternParts) . '$/';
+        
+        return $pattern;
     }
     
     /**
