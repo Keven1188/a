@@ -85,7 +85,7 @@ class Router
             
             if (preg_match('/^\{([^}]+)\}$/', $part, $matches)) {
                 // É um parâmetro {id}
-                $patternParts[] = '([^/]+)';
+                $patternParts[] = '([^\/]+)';
             } else {
                 // É uma parte literal - escapar caracteres especiais (mas não a barra)
                 $patternParts[] = preg_quote($part, '/');
